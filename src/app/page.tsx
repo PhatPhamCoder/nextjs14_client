@@ -1,11 +1,12 @@
-import { Button } from "@/components/ui/button";
+import ButtonRedirect from "@/app/components/ButtonRedirect";
 
 export default function Home() {
   return (
     <div>
-      <Button size={"lg"} variant={"destructive"}>
-        Đăng ký
-      </Button>
+      <h1 className="text-4xl font-bold text-slate-700 text-center">
+        Xin chào
+      </h1>
+      <ButtonRedirect />
     </div>
   );
 }
