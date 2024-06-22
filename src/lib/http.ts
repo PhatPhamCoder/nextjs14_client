@@ -1,5 +1,6 @@
 import { LoginResType } from "@/components/schemaValidations/auth.schema";
 import envConfig from "@/config";
+import { normalLizePath } from "@/lib/utils";
 
 type CustomeOption = Omit<RequestInit, "method"> & {
   baseUrl?: string | undefined;
@@ -15,7 +16,7 @@ type EntityErrorPayload = {
   }[];
 };
 
-class HttpsError extends Error {
+export class HttpsError extends Error {
   status: number;
   payload: {
     message: string;
@@ -118,10 +119,12 @@ const requrest = async <Response>(
     }
   }
 
-  if (["/auth/login", "/auth/register"].includes(url)) {
-    ClientSessionToken.value = (payload as LoginResType).data.token;
-  } else if (`/auth/logout`.includes(url)) {
-    ClientSessionToken.value = "";
+  if (typeof window !== "undefined") {
+    if (["/auth/login", "/auth/register"].some(item => item === normalLizePath(url))) {
+      ClientSessionToken.value = (payload as LoginResType).data.token;
+    } else if (`/auth/logout` === normalLizePath(url)) {
+      ClientSessionToken.value = "";
+    }
   }
 
   return data;

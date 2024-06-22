@@ -33,3 +33,13 @@ export function handleErrorApi({
     });
   }
 }
+
+
+/**
+ * 
+ * @param path Xóa đi kí tự đầu tiên của path
+ * @returns 
+ */
+export const normalLizePath = (path: string): string => {
+  return path.startsWith("/") ? path.slice(1) : path;
+}
