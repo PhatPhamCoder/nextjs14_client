@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +18,15 @@ import {
   RegisterBody,
   RegisterBodyType,
 } from "@/components/schemaValidations/auth.schema";
-import envConfig from "@/config";
+import authApiRequest from "@/apiRequests/auth";
+import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
+import { ClientSessionToken } from "@/lib/http";
 
 export default function RegisterForm() {
+  const { toast } = useToast();
+  const router = useRouter();
+
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
     defaultValues: {
@@ -33,18 +38,39 @@ export default function RegisterForm() {
   });
 
   async function onSubmit(values: RegisterBodyType) {
-    const response = await fetch(
-      `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`,
-      {
-        body: JSON.stringify(values),
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    ).then((res) => res.json());
+    try {
+      const response = await authApiRequest.register(values);
+      toast({
+        title: response.payload.message,
+      });
 
-    console.log("response::", response);
+      await authApiRequest.auth({
+        sessionToken: response?.payload?.data?.token,
+      });
+      ClientSessionToken.value = response?.payload?.data?.token;
+      router.push("/me");
+    } catch (error: any) {
+      const errors = error.payload.errors as {
+        field: string;
+        message: string;
+      }[];
+
+      const status = error.status as number;
+
+      if (status === 422) {
+        errors.forEach((error) => {
+          form.setError(error.field as "email" | "password", {
+            type: "server",
+            message: error.message,
+          });
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.payload.message,
+        });
+      }
+    }
   }
 
   return (

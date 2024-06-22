@@ -18,14 +18,15 @@ import {
   LoginBody,
   LoginBodyType,
 } from "@/components/schemaValidations/auth.schema";
-import envConfig from "@/config";
+
 import { useToast } from "@/components/ui/use-toast";
-import { useAppContext } from "@/app/AppProvider";
+import authApiRequest from "@/apiRequests/auth";
+import { useRouter } from "next/navigation";
+import { ClientSessionToken } from "@/lib/http";
 
 export default function LoginForm() {
   const { toast } = useToast();
-
-  const { setSessionToken } = useAppContext();
+  const router = useRouter();
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
@@ -37,54 +38,17 @@ export default function LoginForm() {
 
   async function onSubmit(values: LoginBodyType) {
     try {
-      const resopnse = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
-        {
-          body: JSON.stringify(values),
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ).then(async (res) => {
-        const payload = await res.json();
-
-        const data = {
-          status: res.status,
-          payload: payload,
-        };
-
-        if (!res.ok) {
-          throw data;
-        }
-
-        return data;
-      });
+      const response = await authApiRequest.login(values);
       toast({
-        title: "Đăng nhập thành công",
+        title: response.payload.message,
       });
 
-      const responseNextServer = await fetch(`/api/auth`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(resopnse),
-      }).then(async (res) => {
-        const payload = await res.json();
-
-        const data = {
-          status: res.status,
-          payload: payload,
-        };
-        if (!res.ok) {
-          throw data;
-        }
-
-        return data;
+      await authApiRequest.auth({
+        sessionToken: response?.payload?.data?.token,
       });
 
-      setSessionToken(responseNextServer?.payload?.data?.token);
+      ClientSessionToken.value = response?.payload?.data?.token;
+      router.push("/me");
     } catch (error: any) {
       const errors = error.payload.errors as {
         field: string;

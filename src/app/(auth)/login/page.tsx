@@ -1,6 +1,4 @@
 import LoginForm from "@/app/(auth)/login/_components/form";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 export default function LoginPage() {
   return (
