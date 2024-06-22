@@ -1,12 +1,14 @@
 import { LoginResType } from "@/components/schemaValidations/auth.schema";
 import envConfig from "@/config";
 import { normalLizePath } from "@/lib/utils";
+import { redirect } from "next/navigation";
 
 type CustomeOption = Omit<RequestInit, "method"> & {
   baseUrl?: string | undefined;
 };
 
 const ENTITY_ERROR_STATUS = 422;
+const AUTHENTICATION_STATUS = 401;
 
 type EntityErrorPayload = {
   message: string;
@@ -66,13 +68,14 @@ class SessionToken {
 
 export const ClientSessionToken = new SessionToken();
 
+let clientLogoutRequest: null | Promise<any> = null;
+
 const requrest = async <Response>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   url: string,
   options?: CustomeOption | undefined,
 ) => {
   const body = options ? JSON.stringify(options.body) : undefined;
-
   const baseHeaders = {
     "Content-Type": "application/json",
     Authorization: ClientSessionToken.value
@@ -114,13 +117,40 @@ const requrest = async <Response>(
           payload: EntityErrorPayload;
         },
       );
+    } else if (res.status === AUTHENTICATION_STATUS) {
+      if (!clientLogoutRequest) {
+        if (typeof window !== "undefined") {
+          // Nếu ở dưới client | Xử lí logout dưới client
+          clientLogoutRequest = fetch(`/api/auth/logout`, {
+            method: "POST",
+            body: JSON.stringify({ force: true }),
+            headers: {
+              ...baseHeaders,
+            },
+          });
+          await clientLogoutRequest;
+          ClientSessionToken.value = "";
+          location.href = "/login";
+        } else {
+          // Xử lí logout trên server
+          const sessionToken = (options?.headers as any).Authorization.split(
+            "Bearer ",
+          )[1];
+          redirect(`/logout?sessionToken=${sessionToken}`);
+        }
+      }
     } else {
       throw new HttpsError(data);
     }
   }
 
   if (typeof window !== "undefined") {
-    if (["/auth/login", "/auth/register"].some(item => item === normalLizePath(url))) {
+    if (
+      // Chuẩn hóa đường dẫn "/"
+      ["/auth/login", "/auth/register"].some(
+        (item) => item === normalLizePath(url),
+      )
+    ) {
       ClientSessionToken.value = (payload as LoginResType).data.token;
     } else if (`/auth/logout` === normalLizePath(url)) {
       ClientSessionToken.value = "";

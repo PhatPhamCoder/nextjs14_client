@@ -102,7 +102,7 @@ export default function LoginForm() {
         />
 
         <Button className="flex mx-auto !mt-4 w-full" type="submit">
-          Đăng ký
+          Đăng nhập
         </Button>
       </form>
     </Form>

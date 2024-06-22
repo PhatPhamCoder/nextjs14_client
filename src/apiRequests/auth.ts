@@ -20,9 +20,17 @@ const authApiRequest = {
       Authorization: `Bearer ${sessionToken}`
     }
   }),
-  logoutFromNextClientToNextServer: () => http.post<MessageResType>(`/api/auth/logout`, null, {
-    baseUrl: ``,
-  })
+  logoutFromNextClientToNextServer: (
+    force?: boolean | undefined,
+    signal?: AbortSignal | undefined
+  ) => http.post<MessageResType>(
+    `/api/auth/logout`,
+    { force },
+    {
+      baseUrl: "",
+      // Hủy gọi API 2 lần
+      signal
+    })
 };
 
 export default authApiRequest;

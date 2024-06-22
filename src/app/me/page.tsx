@@ -9,7 +9,7 @@ export default async function MePage() {
     <div>
       <ul>
         Xin chào, {data?.payload?.data?.name}
-        <Profile />
+        {/* <Profile /> */}
       </ul>
     </div>
   );

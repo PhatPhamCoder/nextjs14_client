@@ -3,11 +3,13 @@ import { EntityError } from "@/lib/http";
 import { type ClassValue, clsx } from "clsx";
 import { UseFormSetError } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
+import jwt from "jsonwebtoken";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Xử lí lỗi API
 export function handleErrorApi({
   error,
   setError,
@@ -34,12 +36,16 @@ export function handleErrorApi({
   }
 }
 
-
 /**
- * 
+ *
  * @param path Xóa đi kí tự đầu tiên của path
- * @returns 
+ * @returns
  */
 export const normalLizePath = (path: string): string => {
   return path.startsWith("/") ? path.slice(1) : path;
-}
+};
+
+// Giải mã JWT
+export const decodeJWT = <Payload = any>(token: string) => {
+  return jwt.decode(token) as Payload;
+};
