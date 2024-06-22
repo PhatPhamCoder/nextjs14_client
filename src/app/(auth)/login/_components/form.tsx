@@ -23,10 +23,13 @@ import { useToast } from "@/components/ui/use-toast";
 import authApiRequest from "@/apiRequests/auth";
 import { useRouter } from "next/navigation";
 import { ClientSessionToken } from "@/lib/http";
+import { handleErrorApi } from "@/lib/utils";
+import { useState } from "react";
 
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
@@ -37,7 +40,9 @@ export default function LoginForm() {
   });
 
   async function onSubmit(values: LoginBodyType) {
+    if (isLoading) return;
     try {
+      setIsLoading(true);
       const response = await authApiRequest.login(values);
       toast({
         title: response.payload.message,
@@ -50,26 +55,12 @@ export default function LoginForm() {
       ClientSessionToken.value = response?.payload?.data?.token;
       router.push("/me");
     } catch (error: any) {
-      const errors = error.payload.errors as {
-        field: string;
-        message: string;
-      }[];
-
-      const status = error.status as number;
-
-      if (status === 422) {
-        errors.forEach((error) => {
-          form.setError(error.field as "email" | "password", {
-            type: "server",
-            message: error.message,
-          });
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error.payload.message,
-        });
-      }
+      handleErrorApi({
+        error,
+        setError: form.setError,
+      });
+    } finally {
+      setIsLoading(false);
     }
   }
 
