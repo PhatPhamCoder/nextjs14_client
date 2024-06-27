@@ -44,15 +44,17 @@ export default function LoginForm() {
     try {
       setIsLoading(true);
       const response = await authApiRequest.login(values);
-      toast({
-        title: response.payload.message,
-      });
 
       await authApiRequest.auth({
         sessionToken: response?.payload?.data?.token,
+        expiresAt: response?.payload?.data?.expiresAt,
       });
 
       ClientSessionToken.value = response?.payload?.data?.token;
+
+      toast({
+        title: response.payload.message,
+      });
       router.push("/me");
     } catch (error: any) {
       handleErrorApi({

@@ -53,6 +53,8 @@ export class EntityError extends HttpsError {
 
 class SessionToken {
   private token = "";
+  private _expiresAt = new Date().toISOString();
+
   get value() {
     return this.token;
   }
@@ -63,6 +65,18 @@ class SessionToken {
     }
 
     this.token = token;
+  }
+
+  get expiresAt() {
+    return this._expiresAt;
+  }
+
+  set expiresAt(expiresAt: string) {
+    if (typeof window === "undefined") {
+      throw new Error("Cannot set expiresAt on server side");
+    }
+
+    this._expiresAt = expiresAt;
   }
 }
 
@@ -130,6 +144,7 @@ const requrest = async <Response>(
           });
           await clientLogoutRequest;
           ClientSessionToken.value = "";
+          ClientSessionToken.expiresAt = new Date().toISOString();
           location.href = "/login";
         } else {
           // Xử lí logout trên server
@@ -152,8 +167,10 @@ const requrest = async <Response>(
       )
     ) {
       ClientSessionToken.value = (payload as LoginResType).data.token;
+      ClientSessionToken.expiresAt = (payload as LoginResType).data.expiresAt;
     } else if (`/auth/logout` === normalLizePath(url)) {
       ClientSessionToken.value = "";
+      ClientSessionToken.expiresAt = new Date().toISOString();
     }
   }
 
